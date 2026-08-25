@@ -1,0 +1,12 @@
+# Caddy 設定：監聽 Railway 注入的 PORT，提供帳號密碼登入後轉發到 dsh
+:{$PORT} {
+    encode zstd gzip
+
+    # 帳號密碼登入（使用者在 Railway Variables 設定 DSH_WEB_USER / DSH_WEB_PASSWORD）
+    basic_auth {
+        {$DSH_WEB_USER} {$DSH_WEB_PASSWORD_HASH}
+    }
+
+    # 轉發到本機的 dsh web server
+    reverse_proxy 127.0.0.1:3080
+}
