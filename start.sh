@@ -57,6 +57,8 @@ CADDY_PID=$!
 sleep 1
 
 # --- 7. 啟動 dsh（前景）---
+# dsh 的 HMR 服務需要 --expose-internals 旗標，因此用 node 直接啟動 bin
 echo "啟動 dsh web..."
+DSH_BIN="/usr/local/lib/node_modules/@deepseek-ai/dsh/lib/bin.js"
 # shellcheck disable=SC2086
-exec dsh web --port 3080 --no-open $TRUSTED_ARGS
+exec node --expose-internals "$DSH_BIN" web --port 3080 --no-open $TRUSTED_ARGS
