@@ -25,11 +25,19 @@ cat > /etc/caddy/Caddyfile <<EOF
 :$PORT {
     encode zstd gzip
 
-    basic_auth {
-        $DSH_WEB_USER $HASH
+    # 健康檢查端點（不需登入，讓 Railway healthcheck 通過）
+    @health path /__health
+    handle @health {
+        respond "ok" 200
     }
 
-    reverse_proxy 127.0.0.1:3080
+    # 其餘請求：帳號密碼登入後轉發到 dsh
+    handle {
+        basic_auth {
+            $DSH_WEB_USER $HASH
+        }
+        reverse_proxy 127.0.0.1:3080
+    }
 }
 EOF
 echo "Caddyfile 已生成（監聽 port $PORT）"
