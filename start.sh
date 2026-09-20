@@ -6,6 +6,13 @@ echo "=============================================="
 echo " DeepSeek Harness (Railway) 啟動"
 echo "=============================================="
 
+# dsh 進入點與版本。版本也會寫進公開的 /__health，方便遠端確認線上跑的是哪一版。
+DSH_BIN="/usr/local/lib/node_modules/@deepseek-ai/dsh/lib/bin.js"
+DSH_PACKAGE="/usr/local/lib/node_modules/@deepseek-ai/dsh/package.json"
+DSH_VERSION="$(node -p "require('$DSH_PACKAGE').version" 2>/dev/null || echo unknown)"
+echo "dsh 版本：$DSH_VERSION"
+echo "node：$(node -v)"
+
 # --- 1. 檢查必要環境變數 ---
 if [ -z "$DSH_WEB_USER" ] || [ -z "$DSH_WEB_PASSWORD" ]; then
   echo "錯誤：需要設定 DSH_WEB_USER 與 DSH_WEB_PASSWORD 環境變數（登入帳號/密碼）"
@@ -28,7 +35,7 @@ cat > /etc/caddy/Caddyfile <<EOF
     # 健康檢查端點（不需登入，讓 Railway healthcheck 通過）
     @health path /__health
     handle @health {
-        respond "ok" 200
+        respond "ok dsh-$DSH_VERSION" 200
     }
 
     # 其餘請求：帳號密碼登入後轉發到 dsh
@@ -66,7 +73,8 @@ sleep 1
 
 # --- 7. 啟動 dsh（前景）---
 # dsh 的 HMR 服務需要 --expose-internals 旗標，因此用 node 直接啟動 bin
+# （DSH_BIN 已於開頭定義，並採官方「已安裝形式」啟動：全部模組都解析到 lib/，
+#   避免開發形式把內部 import 投影到 src/ 造成兩份模組實例而讓工具呼叫失敗）
 echo "啟動 dsh web..."
-DSH_BIN="/usr/local/lib/node_modules/@deepseek-ai/dsh/lib/bin.js"
 # shellcheck disable=SC2086
 exec node --expose-internals "$DSH_BIN" web --port 3080 --no-open $TRUSTED_ARGS
